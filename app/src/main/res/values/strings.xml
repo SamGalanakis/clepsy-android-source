@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Clepsy</string>
+    <string name="notification_monitoring_title">Clepsy monitoring</string>
+    <string name="notification_status_unpaired">Pair the device to begin monitoring.</string>
+    <string name="notification_status_running">Monitoring active</string>
+    <string name="notification_status_starting">Preparing to monitor…</string>
+    <string name="notification_status_paused">Monitoring paused</string>
+    <string name="notification_action_pause">Pause</string>
+    <string name="notification_action_resume">Resume</string>
+    <string name="notification_action_stop">Stop</string>
+    <string name="notification_channel_name">Clepsy monitoring</string>
+    <string name="notification_channel_description">Persistent notification while Clepsy monitors this device.</string>
+    <string name="notification_detail_idle">Awaiting usage events…</string>
+</resources>

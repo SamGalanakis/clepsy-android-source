@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "ms-vscode.gradle",
+        "vscjava.vscode-java-pack",
+        "fwcd.kotlin",
+        "androidx.android-future",
+        "ms-azuretools.vscode-docker",
+        "GitHub.copilot-chat"
+    ]
+}
