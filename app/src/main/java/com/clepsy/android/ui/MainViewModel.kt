@@ -54,22 +54,74 @@ class MainViewModel(
     }
 
     fun pair(pairingCode: String) {
-        if (pairingCode.isBlank()) {
+        val trimmedCode = pairingCode.trim()
+        if (trimmedCode.isBlank()) {
             _pairingState.value = PairingState.Error("Pairing code cannot be empty")
             return
         }
         viewModelScope.launch {
-            _pairingState.value = PairingState.Loading
-            when (val result = configRepository.pair(pairingCode)) {
-                is ApiResult.Success -> {
-                    _pairingState.value = PairingState.Success("Device paired successfully")
+            try {
+                _pairingState.value = PairingState.Loading
+                when (val result = configRepository.pair(trimmedCode)) {
+                    is ApiResult.Success -> {
+                        _pairingState.value = PairingState.Success("Device paired successfully")
+                    }
+                    is ApiResult.Failure -> {
+                        val userMessage = buildString {
+                            if (result.statusCode != null) {
+                                append("HTTP ${result.statusCode}: ")
+                            }
+                            append(
+                                when {
+                                    result.message?.isNotBlank() == true -> {
+                                        // Try to extract a user-friendly message from JSON error
+                                        extractErrorMessage(result.message)
+                                    }
+                                    result.statusCode != null -> "Server returned error code ${result.statusCode}"
+                                    else -> "Pairing failed. Please check your code and backend URL."
+                                }
+                            )
+                        }
+                        _pairingState.value = PairingState.Error(
+                            message = userMessage,
+                            statusCode = result.statusCode,
+                            fullError = result.message
+                        )
+                    }
                 }
-                is ApiResult.Failure -> {
-                    val message = result.message?.takeIf { it.isNotBlank() }
-                        ?: "Pairing failed. Please try again."
-                    _pairingState.value = PairingState.Error(message)
-                }
+            } catch (e: Exception) {
+                _pairingState.value = PairingState.Error(
+                    message = "Pairing failed: ${e.message ?: "Unknown error"}",
+                    fullError = e.stackTraceToString()
+                )
             }
+        }
+    }
+
+    private fun extractErrorMessage(rawError: String): String {
+        // Try to extract a friendly message from JSON error responses
+        return try {
+            // Check for common JSON error patterns
+            when {
+                rawError.contains("\"detail\"", ignoreCase = true) -> {
+                    // FastAPI style: {"detail": "message"}
+                    val regex = """"detail"\s*:\s*"([^"]+)"""".toRegex()
+                    regex.find(rawError)?.groupValues?.get(1) ?: rawError
+                }
+                rawError.contains("\"error\"", ignoreCase = true) -> {
+                    // Generic: {"error": "message"}
+                    val regex = """"error"\s*:\s*"([^"]+)"""".toRegex()
+                    regex.find(rawError)?.groupValues?.get(1) ?: rawError
+                }
+                rawError.contains("\"message\"", ignoreCase = true) -> {
+                    // Generic: {"message": "message"}
+                    val regex = """"message"\s*:\s*"([^"]+)"""".toRegex()
+                    regex.find(rawError)?.groupValues?.get(1) ?: rawError
+                }
+                else -> rawError
+            }
+        } catch (e: Exception) {
+            rawError
         }
     }
 
@@ -100,7 +152,11 @@ class MainViewModel(
         data object Idle : PairingState
         data object Loading : PairingState
         data class Success(val message: String) : PairingState
-        data class Error(val message: String) : PairingState
+        data class Error(
+            val message: String,
+            val statusCode: Int? = null,
+            val fullError: String? = null
+        ) : PairingState
     }
 
     class Factory(

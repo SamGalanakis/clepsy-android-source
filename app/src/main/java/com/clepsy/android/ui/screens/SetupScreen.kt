@@ -43,6 +43,7 @@ fun SetupScreen(
     var pairingCode by rememberSaveable { mutableStateOf("") }
     var hasPaired by remember { mutableStateOf(state.userConfig.isPaired) }
 
+    // Sync local state with config changes
     LaunchedEffect(state.userConfig.clepsyBackendUrl) {
         backendUrl = state.userConfig.clepsyBackendUrl
     }
@@ -53,6 +54,16 @@ fun SetupScreen(
         hasPaired = state.userConfig.isPaired
         if (!state.userConfig.isPaired) {
             pairingCode = ""
+        }
+    }
+
+    // Auto-clear pairing code and message on success
+    LaunchedEffect(state.pairingState) {
+        if (state.pairingState is MainViewModel.PairingState.Success) {
+            pairingCode = ""
+            // Auto-dismiss success message after a brief delay
+            kotlinx.coroutines.delay(1500)
+            onClearPairingMessage()
         }
     }
 
@@ -85,7 +96,10 @@ fun SetupScreen(
             ) {
                 OutlinedTextField(
                     value = backendUrl,
-                    onValueChange = { backendUrl = it },
+                    onValueChange = { 
+                        backendUrl = it
+                        onBackendUrlChange(it)
+                    },
                     label = { Text("Backend URL") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -96,7 +110,10 @@ fun SetupScreen(
                 )
                 OutlinedTextField(
                     value = deviceName,
-                    onValueChange = { deviceName = it },
+                    onValueChange = { 
+                        deviceName = it
+                        onDeviceNameChange(it)
+                    },
                     label = { Text("Device name") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -115,14 +132,17 @@ fun SetupScreen(
 
                 Button(
                     onClick = {
-                        onBackendUrlChange(backendUrl)
-                        onDeviceNameChange(deviceName)
-                        onPair(pairingCode)
+                        onPair(pairingCode.trim())
                     },
-                    enabled = pairingCode.isNotBlank(),
+                    enabled = pairingCode.isNotBlank() && 
+                             backendUrl.isNotBlank() && 
+                             state.pairingState !is MainViewModel.PairingState.Loading,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = if (hasPaired) "Re-pair device" else "Pair")
+                    Text(text = when (state.pairingState) {
+                        is MainViewModel.PairingState.Loading -> "Pairing…"
+                        else -> if (hasPaired) "Re-pair device" else "Pair"
+                    })
                 }
             }
         }
@@ -151,8 +171,40 @@ private fun PairingMessage(
             TextButton(onClick = onDismiss) { Text("Dismiss") }
         }
         is MainViewModel.PairingState.Error -> {
-            Text(text = state.message, color = MaterialTheme.colorScheme.error)
-            TextButton(onClick = onDismiss) { Text("Dismiss") }
+            var showFullError by remember { mutableStateOf(false) }
+            
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                
+                if (state.fullError != null) {
+                    TextButton(
+                        onClick = { showFullError = !showFullError }
+                    ) {
+                        Text(if (showFullError) "Hide details" else "Show details")
+                    }
+                    
+                    if (showFullError) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Text(
+                                text = state.fullError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    }
+                }
+                
+                TextButton(onClick = onDismiss) { Text("Dismiss") }
+            }
         }
     }
 }
