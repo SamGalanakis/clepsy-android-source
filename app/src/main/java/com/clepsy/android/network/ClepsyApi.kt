@@ -14,6 +14,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.util.UUID
 
 private const val APP_USAGE_ENDPOINT = "/sources/aggregator/mobile/app-usage"
 
@@ -120,6 +121,7 @@ data class PairingResponse(
 
 @Serializable
 private data class MobileAppUsagePayload(
+    @SerialName("id") val id: String,
     @SerialName("event_type") val eventType: String,
     @SerialName("package_name") val packageName: String,
     @SerialName("app_label") val appLabel: String,
@@ -132,6 +134,7 @@ private data class MobileAppUsagePayload(
         private const val EVENT_TYPE = "mobile_app_usage"
 
         fun from(event: MobileAppUsageEvent): MobileAppUsagePayload = MobileAppUsagePayload(
+            id = UUID.randomUUID().toString(), // Generates UUID4 (version 4, random)
             eventType = EVENT_TYPE,
             packageName = event.packageName,
             appLabel = event.appLabel,
