@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+Release/default network security config.
+
+- Strict: cleartextTrafficPermitted is false by default.
+- This enforces HTTPS-only for production builds.
+- Debug-specific relaxations are provided via app/src/debug/res/xml/network_security_config.xml
+  and a debug manifest overlay.
+-->
 <network-security-config>
-    <!-- Release build: HTTPS only, no cleartext traffic permitted -->
     <base-config cleartextTrafficPermitted="false" />
 </network-security-config>
