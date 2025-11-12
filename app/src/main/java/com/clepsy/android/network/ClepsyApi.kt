@@ -82,8 +82,9 @@ class HttpClepsyApi(
                 val result = json.decodeFromString(deserializer, body)
                 ApiResult.Success(result)
             }
-        } catch (ioe: IOException) {
-            ApiResult.Failure(null, ioe.message, ioe)
+        } catch (e: Exception) {
+            // Catch all exceptions: IOException, SSLException, JSONException, etc.
+            ApiResult.Failure(null, e.message ?: "Network request failed: ${e::class.simpleName}", e)
         }
     }
 
@@ -96,8 +97,9 @@ class HttpClepsyApi(
                 }
             }
             ApiResult.Success(Unit)
-        } catch (ioe: IOException) {
-            ApiResult.Failure(null, ioe.message, ioe)
+        } catch (e: Exception) {
+            // Catch all exceptions: IOException, SSLException, etc.
+            ApiResult.Failure(null, e.message ?: "Network request failed: ${e::class.simpleName}", e)
         }
     }
 
