@@ -22,8 +22,19 @@ jobs:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "ANDROID_KEYSTORE_BASE64 not set; skipping release signing setup."
-            exit 0
+            echo "ERROR: ANDROID_KEYSTORE_BASE64 secret is not set!"
+            echo ""
+            echo "To create a keystore and configure GitHub secrets:"
+            echo "1. Generate keystore: keytool -genkey -v -keystore release.keystore -alias clepsy -keyalg RSA -keysize 2048 -validity 10000"
+            echo "2. Encode it: base64 -i release.keystore | tr -d '\n'"
+            echo "3. Add to GitHub: Settings → Environments → main → Add secret"
+            echo ""
+            echo "Required secrets:"
+            echo "  - ANDROID_KEYSTORE_BASE64: base64-encoded keystore file (from step 2)"
+            echo "  - ANDROID_KEYSTORE_PASSWORD: keystore password (from step 1)"
+            echo "  - ANDROID_KEY_ALIAS: key alias name (e.g., 'clepsy')"
+            echo "  - ANDROID_KEY_ALIAS_PASSWORD: key password (from step 1)"
+            exit 1
           fi
           mkdir -p ~/.android/keystores
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > ~/.android/keystores/clepsy-release.keystore
@@ -55,8 +66,10 @@ jobs:
           ANDROID_KEY_ALIAS_PASSWORD: ${{ secrets.ANDROID_KEY_ALIAS_PASSWORD }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_ALIAS_PASSWORD" ]; then
-            echo "Release signing secrets missing; skipping assembleRelease."
-            exit 0
+            echo "ERROR: Release signing secrets are incomplete!"
+            echo "Missing one or more of: ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_ALIAS_PASSWORD"
+            echo "Add them in: Settings → Environments → main → Environment secrets"
+            exit 1
           fi
           ./gradlew --stacktrace assembleRelease
 
