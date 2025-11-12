@@ -2,19 +2,14 @@
 <!--
 Debug network security config.
 
-- Allows cleartext HTTP only for explicitly listed dev/Tailscale hosts.
+- Allows cleartext HTTP for all domains in debug builds.
 - Used only in debug via app/src/debug/AndroidManifest.xml.
 - Release builds use the strict config in app/src/main/res/xml/network_security_config.xml.
 -->
 <network-security-config>
-    <!-- Example: allow HTTP to Tailscale IP/host used for local backend.
-         Replace with your actual dev host or tailnet name as needed. -->
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- Example placeholders; customize:
-        <domain includeSubdomains="false">100.x.y.z</domain>
-        <domain includeSubdomains="false">your-node.tailnet-xyz.ts.net</domain>
-        -->
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="false">10.0.0.0</domain>
-    </domain-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
 </network-security-config>

@@ -36,7 +36,13 @@ class ForegroundAppDetector(
             var lastTimestamp = 0L
             val event = UsageEvents.Event()
             while (events.getNextEvent(event)) {
-                if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND && event.timeStamp >= lastTimestamp) {
+                val isForegroundEvent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    event.eventType == UsageEvents.Event.ACTIVITY_RESUMED
+                } else {
+                    @Suppress("DEPRECATION")
+                    event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND
+                }
+                if (isForegroundEvent && event.timeStamp >= lastTimestamp) {
                     lastPackage = event.packageName
                     lastClass = event.className
                     lastTimestamp = event.timeStamp

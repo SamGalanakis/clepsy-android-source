@@ -12,19 +12,11 @@ import androidx.core.content.ContextCompat
 object PermissionUtils {
     fun hasUsageStatsPermission(context: Context): Boolean {
         val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as? AppOpsManager ?: return false
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                context.applicationInfo.uid,
-                context.packageName
-            )
-        } else {
-            appOps.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                context.applicationInfo.uid,
-                context.packageName
-            )
-        }
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            context.applicationInfo.uid,
+            context.packageName
+        )
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
