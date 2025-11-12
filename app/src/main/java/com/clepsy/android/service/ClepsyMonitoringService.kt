@@ -176,6 +176,14 @@ class ClepsyMonitoringService : LifecycleService() {
                         if (foreground.packageName != lastForegroundPackage) {
                             lastForegroundPackage = foreground.packageName
                         }
+                        
+                        // Check filter BEFORE scheduler evaluation to avoid affecting cooldowns
+                        if (config.shouldFilterApp(foreground.packageName, foreground.appLabel)) {
+                            // Event filtered - skip completely without affecting scheduler state
+                            delay(pollDelayMillis)
+                            continue@loop
+                        }
+                        
                         when (val decision = captureScheduler.evaluate(foreground, now)) {
                             is CaptureScheduler.Decision.Capture -> {
                                 val snapshot = notificationRepository.snapshotFor(foreground.packageName)
@@ -270,10 +278,14 @@ class ClepsyMonitoringService : LifecycleService() {
     }
 
     private fun buildNotification(state: MonitoringState, config: UserConfig?): Notification {
+        // Intent to open app - does NOT change monitoring state
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
         val contentIntent = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, MainActivity::class.java),
+            openAppIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -293,6 +305,7 @@ class ClepsyMonitoringService : LifecycleService() {
             .setContentText(summary)
             .setStyle(NotificationCompat.BigTextStyle().bigText(details))
             .setContentIntent(contentIntent)
+            .setAutoCancel(false)  // Don't dismiss on click
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)

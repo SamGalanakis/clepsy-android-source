@@ -39,6 +39,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -76,9 +79,12 @@ fun SettingsScreen(
         deviceName = state.userConfig.sourceName
     }
 
+    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+    
     Column(
         modifier = modifier
             .fillMaxSize()
+            .padding(top = systemBarsPadding.calculateTopPadding())
             .padding(horizontal = 16.dp)
     ) {
         Spacer(Modifier.height(16.dp))
